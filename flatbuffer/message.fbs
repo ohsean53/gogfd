@@ -1,0 +1,102 @@
+// Example IDL file for our monster's schema.
+
+namespace fbMessage;
+
+
+
+union MessageBody {
+	ReqLogin, ReqCreate,
+	ReqJoin, ReqAction1,
+	ReqQuit, ReqRoomList,
+	ResLogin, ResCreate,
+	ResJoin, ResAction1,
+	ResQuit, ResRoomList,
+	NotifyJoin, NotifyAction1, NotifyQuit
+}
+
+enum ResultCode:int {
+	Success = 100,
+	Fail = 200
+}
+
+table Message {
+	body:MessageBody;
+}
+
+table ReqLogin {
+	userID:long;
+}
+
+table ResLogin {
+	userID:long;
+	resultCode:ResultCode = Success;
+}
+
+table ReqCreate {
+	userID:long;
+}
+
+table ResCreate {
+	userID:long;
+	roomID:long;
+	resultCode:ResultCode = Success;
+}
+
+
+table ReqJoin {
+	userID:long;
+	roomID:long;
+}
+
+table ResJoin {
+	userID:long;
+	members:[long];
+	resultCode:ResultCode = Success;
+}
+
+table ReqAction1 {
+	userID:long;
+}
+
+table ResAction1 {
+	userID:long;
+	resultCode:ResultCode = Success;
+}
+
+table ReqQuit {
+	userID:long;
+}
+
+
+table ResQuit {
+	userID:long;
+	resultCode:ResultCode = Success;
+}
+
+table ReqRoomList {
+	userID:long;
+}
+
+table ResRoomList {
+	userID:long;
+	roomIDs:[long];
+	resultCode:ResultCode = Success;
+}
+
+
+table NotifyJoin {
+	userID:long;
+	roomID:long;
+}
+
+table NotifyAction1 {
+	userID:long;
+}
+
+
+table NotifyQuit {
+	userID:long;
+	roomID:long;
+}
+
+root_type Message;
