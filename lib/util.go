@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/artyom/scribe"
 	"github.com/artyom/thrift"
-	"github.com/ohsaean/gogpd/protobuf"
 	"math/rand"
 	"os"
 	"runtime"
@@ -53,11 +52,6 @@ func WriteInt32(n int32) (buf []byte) {
 	return
 }
 
-func WriteMsgType(n gs_protocol.Type) (buf []byte) {
-	buf = WriteInt32(int32(n))
-	return
-}
-
 func RandInt64(min int64, max int64) int64 {
 	return min + rand.Int63n(max - min)
 }
@@ -98,30 +92,4 @@ func Int64SliceToString(set []int64) (str string) {
 	}
 	str += "]";
 	return str
-}
-
-type Console struct {
-	cmd *exec.Cmd
-}
-
-func NewConsole() (c *Console) {
-	c = new(Console)
-	c.cmd = exec.Command("echo", "new console window start!")
-	return
-}
-
-func (c *Console) PrintCommand() {
-	fmt.Printf("==> Executing: %s\n", strings.Join(c.cmd.Args, " "))
-}
-
-func (c *Console) PrintError(err error) {
-	if err != nil {
-		os.Stderr.WriteString(fmt.Sprintf("==> Error: %s\n", err.Error()))
-	}
-}
-
-func (c *Console) PrintOutput(outs []byte) {
-	if len(outs) > 0 {
-		fmt.Printf("==> Output: %s\n", string(outs))
-	}
 }
