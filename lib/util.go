@@ -9,8 +9,6 @@ import (
 	"os"
 	"runtime"
 	"strconv"
-	"strings"
-	"os/exec"
 )
 
 func Itoa64(i int64) string {
