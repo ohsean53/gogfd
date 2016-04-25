@@ -3,19 +3,16 @@ package main
 import (
 //flatbuffers "github.com/google/flatbuffers/go"
 	"gogfd/flatbuffer/fbMessage"
-	"math"
 	"math/rand"
 	"net"
 	"runtime"
 	"time"
 	"gogfd/lib"
+	"gogfd/logger"
+	"gogfd/config"
 )
 
 
-// server config
-const (
-	maxRoom = math.MaxInt32
-)
 
 // global variable
 var (
@@ -39,7 +36,7 @@ func NewMessage(userID int64, eventType byte, msg []byte) *UserMessage {
 }
 
 func InitRooms() {
-	rooms = lib.NewSMap(lib.RWMutex)
+	rooms = lib.NewSMap(lib.RW_MUTEX)
 	rand.Seed(time.Now().UTC().UnixNano())
 }
 
@@ -51,20 +48,14 @@ func ClientSender(user *User, c net.Conn) {
 		select {
 		case <-user.exit:
 		// when receive signal then finish the program
-			if DEBUG {
-				lib.Log("Leave user id :" + lib.Itoa64(user.userID))
-			}
+			logger.Log(logger.DEBUG, "Leave user id :" + lib.Itoa64(user.userID))
 			return
 		case m := <-user.recv:
 		// on receive message
-			if DEBUG {
-				lib.Log("Client recv, user id : " + lib.Itoa64(user.userID))
-			}
+			logger.Log(logger.DEBUG, "Client recv, user id : " + lib.Itoa64(user.userID))
 			_, err := c.Write(m.contents) // send data to client
 			if err != nil {
-				if DEBUG {
-					lib.Log(err)
-				}
+				logger.Log(logger.ERROR, err)
 				return
 			}
 		}
@@ -78,9 +69,7 @@ func ClientReader(user *User, c net.Conn) {
 	for {
 		n, err := c.Read(data)
 		if err != nil {
-			if DEBUG {
-				lib.Log("Fail Stream read, err : ", err)
-			}
+			logger.Log(logger.DEBUG, "Fail Stream read, err : ", err)
 			break
 		}
 
@@ -89,18 +78,15 @@ func ClientReader(user *User, c net.Conn) {
 		messageType := message.BodyType()
 		handler, ok := msgHandler[messageType]
 
-		if DEBUG {
-			lib.Log("req : type : ", messageType)
-		}
+		logger.Log(logger.DEBUG, "req : type : ", messageType)
+
 		if ok {
 			ret := handler(user, message) // calling proper handler function
 			if !ret {
-				lib.Log("Fail handler : ", messageType)
+				logger.Log(logger.ERROR, "Fail handler : ", messageType)
 			}
 		} else {
-			if DEBUG {
-				lib.Log("Fail no function defined for type : ", messageType)
-			}
+			logger.Log(logger.ERROR, "Fail no function defined for type : ", messageType)
 			break
 		}
 	}
@@ -112,11 +98,9 @@ func ClientReader(user *User, c net.Conn) {
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	ln, err := net.Listen("tcp", ":8000") // using TCP protocol over 8000 port
+	ln, err := net.Listen("tcp", ":" + config.SERVER_PORT) // using TCP protocol over 8000 port
 	if err != nil {
-		if DEBUG {
-			lib.Log(err)
-		}
+		logger.Log(logger.CRITICAL, err)
 		return
 	}
 
@@ -126,15 +110,12 @@ func main() {
 	for {
 		conn, err := ln.Accept() // server accept client connection -> return connection
 		if err != nil {
-			lib.Log("Fail Accept err : ", err)
+			logger.Log(logger.CRITICAL, "Fail Accept err : ", err)
 			conn.Close()
 			continue
 		}
-		if DEBUG {
-			lib.Log("New Connection: ", conn.RemoteAddr())
-		}
-
-		lib.WriteScribe("access", "test")
+		logger.Log(logger.INFO, "New Connection: ", conn.RemoteAddr())
+		logger.WriteScribe("access", "test")
 		user := NewUser(0, nil) // empty user data
 		go ClientReader(user, conn)
 		go ClientSender(user, conn)

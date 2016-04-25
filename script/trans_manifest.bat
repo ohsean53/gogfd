@@ -1,0 +1,1 @@
+%GOPATH%\bin\rsrc -manifest ..\client\client.manifest -o ..\client\rsrc.syso

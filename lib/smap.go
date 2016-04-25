@@ -4,10 +4,10 @@ import (
 	"sync"
 )
 
-// sync type
+type syncType int
 const (
-	RWMutex = 1
-	Channel = 2
+	RW_MUTEX syncType = 1
+	CHANNEL syncType = 2
 )
 
 // A thread safe map(type: `map[int64]interface{}`).
@@ -86,7 +86,7 @@ func (sm sharedMapRWMutex) GetKeys() []int64 {
 
 
 /**
- Using single goroutine (event loop)
+ Using Channel
  */
 type sharedMapChannel struct {
 	m map[int64]interface{}
@@ -168,16 +168,16 @@ func (sm sharedMapChannel) run() {
 
 
 // Create a new shared map with sync type
-func NewSMap(syncType int) SharedMap {
+func NewSMap(t syncType) SharedMap {
 
 	var sm SharedMap
-	if (syncType == RWMutex) {
+	if (t == RW_MUTEX) {
 		sm = sharedMapRWMutex{
 			m: make(map[int64]interface{}),
 		}
 	}
 
-	if (syncType == Channel) {
+	if (t == CHANNEL) {
 		sm = sharedMapChannel{
 			m: make(map[int64]interface{}),
 		}

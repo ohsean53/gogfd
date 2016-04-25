@@ -3,6 +3,7 @@ package main
 import (
 //"math"
 	"gogfd/lib"
+	"gogfd/logger"
 )
 
 type Room struct {
@@ -13,8 +14,8 @@ type Room struct {
 
 func GetRoom(roomID int64) (r *Room) {
 	value, ok := rooms.Get(roomID)
-	if !ok && DEBUG {
-		lib.Log("err: not exist room : ", roomID)
+	if !ok {
+		logger.Log(logger.ERROR, "err: not exist room : ", roomID)
 	}
 	r = value.(*Room)
 	return
@@ -25,9 +26,7 @@ func GetRandomRoomID() (uuid int64) {
 		// TODO change room-id generate strategy
 		uuid = int64(lib.RandInt32(1, 100))
 		if _, ok := rooms.Get(uuid); ok {
-			if DEBUG {
-				lib.Log("err: exist same room id")
-			}
+			logger.Log(logger.ERROR, "err: exist same room id")
 			continue
 		}
 		return
@@ -38,7 +37,7 @@ func GetRandomRoomID() (uuid int64) {
 func NewRoom(roomID int64) (r *Room) {
 	r = new(Room)
 	r.messages = make(chan *UserMessage)
-	r.users = lib.NewSMap(lib.RWMutex) // global shared map
+	r.users = lib.NewSMap(lib.RW_MUTEX) // global shared map
 	r.roomID = roomID
 	go r.RoomMessageLoop() // for broadcast message
 	return
@@ -56,9 +55,7 @@ func (r *Room) RoomMessageLoop() {
 				continue
 			}
 			user := value.(*User)
-			if DEBUG {
-				lib.Log("Push message for broadcast :" + lib.Itoa64(user.userID))
-			}
+			logger.Log(logger.DEBUG, "Push message for broadcast :" + lib.Itoa64(user.userID))
 			user.Push(m)
 		}
 	}

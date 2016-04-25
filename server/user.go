@@ -4,6 +4,7 @@ import (
 	"gogfd/lib"
 	"gogfd/flatbuffer/fbMessage"
 	"github.com/google/flatbuffers/go"
+	"gogfd/logger"
 )
 
 type User struct {
@@ -24,14 +25,10 @@ func NewUser(uid int64, room *Room) *User {
 
 func (u *User) Leave() {
 
-	if DEBUG {
-		lib.Log("Leave user id : ", lib.Itoa64(u.userID))
-	}
+	logger.Log(logger.DEBUG, "Leave user id : ", lib.Itoa64(u.userID))
 
 	if u.room != nil {
-		if DEBUG {
-			lib.Log("Leave room id : ", lib.Itoa64(u.room.roomID))
-		}
+		logger.Log(logger.DEBUG, "Leave room id : ", lib.Itoa64(u.room.roomID))
 
 		builder := flatbuffers.NewBuilder(0)
 		fbMessage.NotifyQuitStart(builder)
@@ -51,14 +48,11 @@ func (u *User) Leave() {
 
 		// notify all members in the room
 		u.SendToAll(NewMessage(u.userID, fbMessage.MessageBodyNotifyQuit, builder.FinishedBytes()))
-		if DEBUG {
-			lib.Log("NotifyQuit message send")
-		}
+		logger.Log(logger.DEBUG, "NotifyQuit message send")
 	}
 
-	if DEBUG {
-		lib.Log("Leave func end")
-	}
+	logger.Log(logger.DEBUG, "Leave func end")
+
 }
 
 func (u *User) Push(m *UserMessage) {

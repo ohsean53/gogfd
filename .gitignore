@@ -1,2 +1,5 @@
 /.idea
 *.iml
+*.exe
+/config/config.vbox.go
+/script/build_server_debug.bat

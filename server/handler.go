@@ -2,6 +2,7 @@ package main
 
 import (
 	"gogfd/lib"
+	"gogfd/logger"
 	"gogfd/flatbuffer/fbMessage"
 	flatbuffers "github.com/google/flatbuffers/go"
 	"strconv"
@@ -21,14 +22,14 @@ var msgHandler = map[byte]MsgHandlerFunc{
 func LoginHandler(user *User, message *fbMessage.Message) bool {
 	unionTable := new(flatbuffers.Table)
 	if message.Body(unionTable) == false {
-		lib.Log("message.Body fail")
+		logger.Log(logger.ERROR, "message.Body fail")
 		return false
 	}
 
 	req := new(fbMessage.ReqLogin)
 	req.Init(unionTable.Bytes, unionTable.Pos)
 	user.userID = req.UserID()
-	lib.Log("server recv user id : ", user.userID)
+	logger.Log(logger.DEBUG, "server recv user id : ", user.userID)
 
 	builder := flatbuffers.NewBuilder(0)
 	fbMessage.ResLoginStart(builder)
@@ -51,7 +52,7 @@ func CreateHandler(user *User, message *fbMessage.Message) bool {
 
 	unionTable := new(flatbuffers.Table)
 	if message.Body(unionTable) == false {
-		lib.Log("message.Body fail")
+		logger.Log(logger.ERROR, "message.Body fail")
 		return false
 	}
 
@@ -59,9 +60,7 @@ func CreateHandler(user *User, message *fbMessage.Message) bool {
 	req.Init(unionTable.Bytes, unionTable.Pos)
 
 	if user.userID != req.UserID() {
-		if DEBUG {
-			lib.Log("Fail room create, user id missmatch")
-		}
+		logger.Log(logger.ERROR, "Fail room create, user id missmatch")
 		return false
 	}
 
@@ -72,9 +71,7 @@ func CreateHandler(user *User, message *fbMessage.Message) bool {
 	r.users.Set(user.userID, user) // insert user
 	user.room = r                  // set room
 	rooms.Set(roomID, r)           // set room into global shared map
-	if DEBUG {
-		lib.Log("Get rand room id : ", lib.Itoa64(roomID))
-	}
+	logger.Log(logger.DEBUG, "Get rand room id : ", lib.Itoa64(roomID))
 
 	builder := flatbuffers.NewBuilder(0)
 	fbMessage.ResCreateStart(builder)
@@ -89,10 +86,7 @@ func CreateHandler(user *User, message *fbMessage.Message) bool {
 	msg := fbMessage.MessageEnd(builder)
 
 	builder.Finish(msg)
-
-	if DEBUG {
-		lib.Log("Room create, room id : ", lib.Itoa64(roomID))
-	}
+	logger.Log(logger.DEBUG, "Room create, room id : ", lib.Itoa64(roomID))
 
 	user.Push(NewMessage(user.userID, fbMessage.MessageBodyResCreate, builder.FinishedBytes()))
 	return true
@@ -103,7 +97,7 @@ func JoinHandler(user *User, message *fbMessage.Message) bool {
 	// request message
 	unionTable := new(flatbuffers.Table)
 	if message.Body(unionTable) == false {
-		lib.Log("message.Body fail")
+		logger.Log(logger.ERROR, "message.Body fail")
 		return false
 	}
 
@@ -113,9 +107,7 @@ func JoinHandler(user *User, message *fbMessage.Message) bool {
 	value, ok := rooms.Get(roomID)
 
 	if !ok {
-		if DEBUG {
-			lib.Log("Fail room join, room does not exist, room id : ", lib.Itoa64(roomID))
-		}
+		logger.Log(logger.ERROR, "Fail room join, room does not exist, room id : ", lib.Itoa64(roomID))
 		return false
 	}
 
@@ -145,10 +137,10 @@ func JoinHandler(user *User, message *fbMessage.Message) bool {
 	// set member vector (must do init first)
 	////////////////////////////////////////////////////////
 	userCount := r.users.Count()
-	lib.Log("room id : " + lib.Itoa64(roomID) + " member count : " + strconv.Itoa(userCount))
+	logger.Log(logger.INFO, "room id : " + lib.Itoa64(roomID) + " member count : " + strconv.Itoa(userCount))
 	fbMessage.ResJoinStartMembersVector(builder, userCount)
 	for userID, _ := range r.users.Map() {
-		lib.Log("PrependInt64 room id : " + lib.Itoa64(roomID) + " user id : " + lib.Itoa64(userID))
+		logger.Log(logger.INFO, "PrependInt64 room id : " + lib.Itoa64(roomID) + " user id : " + lib.Itoa64(userID))
 		builder.PrependInt64(userID)
 	}
 	member := builder.EndVector(userCount)
@@ -177,7 +169,7 @@ func Action1Handler(user *User, message *fbMessage.Message) bool {
 	// request message
 	unionTable := new(flatbuffers.Table)
 	if message.Body(unionTable) == false {
-		lib.Log("message.Body fail")
+		logger.Log(logger.ERROR, "message.Body fail")
 		return false
 	}
 
@@ -185,15 +177,11 @@ func Action1Handler(user *User, message *fbMessage.Message) bool {
 	req.Init(unionTable.Bytes, unionTable.Pos)
 
 	if nil == user.room {
-		if DEBUG {
-			lib.Log("Fail action 1, not exist room info")
-		}
+		logger.Log(logger.ERROR, "Fail action 1, not exist room info")
 		return false
 	}
 	if user.userID != req.UserID() {
-		if DEBUG {
-			lib.Log("Fail action 1, user id missmatch")
-		}
+		logger.Log(logger.ERROR, "Fail action 1, user id missmatch")
 		return false
 	}
 
@@ -235,14 +223,14 @@ func QuitHandler(user *User, message *fbMessage.Message) bool {
 
 	unionTable := new(flatbuffers.Table)
 	if message.Body(unionTable) == false {
-		lib.Log("message.Body fail")
+		logger.Log(logger.ERROR, "message.Body fail")
 		return false
 	}
 
 	req := new(fbMessage.ReqQuit)
 	req.Init(unionTable.Bytes, unionTable.Pos)
 	user.userID = req.UserID()
-	lib.Log("QuitHandler server recv user id : ", user.userID)
+	logger.Log(logger.ERROR, "QuitHandler server recv user id : ", user.userID)
 
 	builder := flatbuffers.NewBuilder(0)
 	fbMessage.ResQuitStart(builder)
@@ -268,7 +256,7 @@ func RoomListHandler(user *User, message *fbMessage.Message) bool {
 	// request message
 	unionTable := new(flatbuffers.Table)
 	if message.Body(unionTable) == false {
-		lib.Log("message.Body fail")
+		logger.Log(logger.ERROR, "message.Body fail")
 		return false
 	}
 

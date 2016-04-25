@@ -5,7 +5,6 @@ package fbMessage
 import (
 	flatbuffers "github.com/google/flatbuffers/go"
 )
-
 type ResAction1 struct {
 	_tab flatbuffers.Table
 }

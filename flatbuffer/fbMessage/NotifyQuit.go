@@ -5,7 +5,6 @@ package fbMessage
 import (
 	flatbuffers "github.com/google/flatbuffers/go"
 )
-
 type NotifyQuit struct {
 	_tab flatbuffers.Table
 }

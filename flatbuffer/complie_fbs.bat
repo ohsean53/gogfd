@@ -1,1 +1,0 @@
-%GOPATH%\bin\flatc --go message.fbs
