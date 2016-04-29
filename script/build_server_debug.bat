@@ -1,1 +1,1 @@
-go build -tags 'debug' gogfd/server
+go build -tags 'debug' -race gogfd/server

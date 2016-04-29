@@ -4,12 +4,25 @@ import (
 //"math"
 	"gogfd/lib"
 	"gogfd/logger"
+	"sync"
 )
 
 type Room struct {
 	users    lib.SharedMap
 	messages chan *UserMessage // broadcast message channel
 	roomID   int64
+}
+
+var (
+	lastUseRoomID int64
+	sc sync.RWMutex
+)
+
+func GetAutoIncRoomID() int64 {
+	sc.Lock()
+	defer sc.Unlock()
+	lastUseRoomID += 1
+	return lastUseRoomID
 }
 
 func GetRoom(roomID int64) (r *Room) {
@@ -21,10 +34,11 @@ func GetRoom(roomID int64) (r *Room) {
 	return
 }
 
-func GetRandomRoomID() (uuid int64) {
+func GenerateRoomID() (uuid int64) {
 	for {
 		// TODO change room-id generate strategy
-		uuid = int64(lib.RandInt32(1, 100))
+		//uuid = int64(lib.RandInt32(1, 100))
+		uuid = GetAutoIncRoomID()
 		if _, ok := rooms.Get(uuid); ok {
 			logger.Log(logger.ERROR, "err: exist same room id")
 			continue

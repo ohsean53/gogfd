@@ -48,6 +48,9 @@ func (u *User) Leave() {
 
 		// notify all members in the room
 		u.SendToAll(NewMessage(u.userID, fbMessage.MessageBodyNotifyQuit, builder.FinishedBytes()))
+
+		u.room = nil
+
 		logger.Log(logger.DEBUG, "NotifyQuit message send")
 	}
 

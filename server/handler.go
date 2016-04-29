@@ -64,14 +64,17 @@ func CreateHandler(user *User, message *fbMessage.Message) bool {
 		return false
 	}
 
+	if user.room != nil {
+		user.Leave()
+	}
 
 	// room create
-	roomID := GetRandomRoomID()
+	roomID := GenerateRoomID()
 	r := NewRoom(roomID)
 	r.users.Set(user.userID, user) // insert user
 	user.room = r                  // set room
 	rooms.Set(roomID, r)           // set room into global shared map
-	logger.Log(logger.DEBUG, "Get rand room id : ", lib.Itoa64(roomID))
+	logger.Log(logger.DEBUG, "GenerateRoomID : ", lib.Itoa64(roomID))
 
 	builder := flatbuffers.NewBuilder(0)
 	fbMessage.ResCreateStart(builder)
@@ -109,6 +112,14 @@ func JoinHandler(user *User, message *fbMessage.Message) bool {
 	if !ok {
 		logger.Log(logger.ERROR, "Fail room join, room does not exist, room id : ", lib.Itoa64(roomID))
 		return false
+	}
+
+	if user.room != nil {
+		if user.room.roomID == roomID {
+			// already joined room
+			return false
+		}
+		user.Leave()
 	}
 
 	r := value.(*Room)
